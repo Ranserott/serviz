@@ -12,7 +12,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 scene.background = new THREE.Color(0x050a08);
-scene.fog = new THREE.Fog(0x050a08, 20, 60);
+scene.fog = new THREE.Fog(0x050a08, 35, 90);
 camera.position.set(0, 1.7, 22);
 
 const cabinetMeshes = [];
@@ -48,6 +48,34 @@ function instantiateCabinet(data, modelTemplate) {
   cabinet.add(glowLight);
   cabinet.userData.glowLight = glowLight;
   return cabinet;
+}
+
+function buildProceduralCabinet(data) {
+  const group = new THREE.Group();
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(1.4, 4, 1),
+    new THREE.MeshLambertMaterial({ color: 0x1a2e1f })
+  );
+  body.position.y = 2;
+  group.add(body);
+
+  for (let i = 0; i < 8; i++) {
+    const led = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 0.08, 0.02),
+      new THREE.MeshBasicMaterial({ color: i % 2 ? 0x00ff44 : 0x00ffaa })
+    );
+    led.position.set(0, 0.6 + i * 0.4, 0.55);
+    group.add(led);
+  }
+
+  const glowLight = new THREE.PointLight(0x00ff44, 0.8, 4);
+  glowLight.position.set(0, 2, 0.8);
+  group.add(glowLight);
+  group.userData.glowLight = glowLight;
+
+  group.userData = { serverId: data.id, serverName: data.name, interactive: true };
+  group.position.set(data.pos[0], 0, data.pos[2]);
+  return group;
 }
 
 function buildDoorAndWall() {
@@ -147,8 +175,9 @@ export async function buildScene() {
   });
 
   // Lighting
-  scene.add(new THREE.AmbientLight(0x112215, 1.5));
-  const mainLight = new THREE.DirectionalLight(0x20ff60, 0.3);
+  scene.add(new THREE.AmbientLight(0x445544, 1.2));
+  scene.add(new THREE.HemisphereLight(0x88ffaa, 0x222211, 0.8));
+  const mainLight = new THREE.DirectionalLight(0xffffff, 0.6);
   mainLight.position.set(0, 8, 0);
   scene.add(mainLight);
 
@@ -168,10 +197,17 @@ export async function buildScene() {
   // Door + wall (with doorway)
   buildDoorAndWall();
 
-  // Load GLB model and instantiate cabinets
-  const modelTemplate = await loadServerModel();
+  // Load GLB model and instantiate cabinets, with procedural fallback
+  let modelTemplate = null;
+  try {
+    modelTemplate = await loadServerModel();
+  } catch (err) {
+    console.error('Failed to load servidor.glb, falling back to procedural cabinets', err);
+  }
   serverData.forEach(s => {
-    const cabinet = instantiateCabinet(s, modelTemplate);
+    const cabinet = modelTemplate
+      ? instantiateCabinet(s, modelTemplate)
+      : buildProceduralCabinet(s);
     scene.add(cabinet);
     cabinetMeshes.push(cabinet);
   });
