@@ -1,5 +1,6 @@
 // js/game.js — global state, objectives, startGame, animate loop
 
+import './three-bootstrap.js';
 import { buildScene, getNearestServer, getCamera, getCabinetMeshes, renderFrame, getDoor } from './scene.js';
 import { print, printPrompt, openTerminal as openTerminalUI, closeTerminal as closeTerminalUI, setupTerminalInput } from './terminal.js';
 import { processCommand } from './commands.js';

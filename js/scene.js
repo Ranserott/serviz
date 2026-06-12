@@ -1,5 +1,6 @@
 // js/scene.js — Three.js scene, GLB server cabinets, door and wall, render helpers
 
+import './three-bootstrap.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const scene = new THREE.Scene();
