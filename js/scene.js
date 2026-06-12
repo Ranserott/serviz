@@ -32,11 +32,36 @@ function loadServerModel() {
     const loader = new GLTFLoader();
     loader.load(
       'model/servidor.glb',
-      gltf => resolve(gltf.scene),
+      gltf => {
+        const root = gltf.scene;
+        const box = new THREE.Box3().setFromObject(root);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        console.log('GLB bounding box:', { min: box.min, max: box.max, size });
+        normalizeToTargetHeight(root, 4);
+        resolve(root);
+      },
       undefined,
       err => reject(err)
     );
   });
+}
+
+function normalizeToTargetHeight(model, targetHeight) {
+  const box = new THREE.Box3().setFromObject(model);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const maxDim = Math.max(size.x, size.y, size.z);
+  if (maxDim > 0) {
+    const scale = targetHeight / maxDim;
+    model.scale.setScalar(scale);
+  }
+  const newBox = new THREE.Box3().setFromObject(model);
+  const center = new THREE.Vector3();
+  newBox.getCenter(center);
+  model.position.x -= center.x;
+  model.position.y -= newBox.min.y;
+  model.position.z -= center.z;
 }
 
 function instantiateCabinet(data, modelTemplate) {
