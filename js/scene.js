@@ -62,12 +62,14 @@ function normalizeToTargetHeight(model, targetHeight) {
   model.position.x -= center.x;
   model.position.y -= newBox.min.y;
   model.position.z -= center.z;
+  console.log('After auto-fit:', { min: newBox.min, max: newBox.max });
 }
 
 function instantiateCabinet(data, modelTemplate) {
   const cabinet = modelTemplate.clone(true);
   cabinet.userData = { serverId: data.id, serverName: data.name, interactive: true };
-  cabinet.position.set(data.pos[0], 0, data.pos[2]);
+  cabinet.position.set(data.pos[0], 0.05, data.pos[2]);
+  cabinet.rotation.y = Math.PI; // face the entrance (z=+20)
   const glowLight = new THREE.PointLight(0x00ff44, 0.6, 3);
   glowLight.position.set(0, 2, 0.8);
   cabinet.add(glowLight);
