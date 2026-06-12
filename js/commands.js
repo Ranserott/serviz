@@ -134,8 +134,6 @@ export function processCommand(raw, deps) {
     print(`Creando directorio home '/home/${username}'`, 'output');
     print(`Agregando nuevo usuario '${username}' (1001) con grupo '${username}'`, 'output');
     if (username === 'sysadmin') checkObjective('sysadmin');
-    if (username === 'devops')   checkObjective('devops');
-    if (username === 'backup')   checkObjective('backup');
     return;
   }
 
@@ -163,7 +161,11 @@ export function processCommand(raw, deps) {
       if (!users[username]) { print(`usermod: usuario '${username}' no existe`, 'error'); return; }
       if (!userGroups[username]) userGroups[username] = [];
       if (!userGroups[username].includes(group)) userGroups[username].push(group);
-      if (group === 'sudo') { addSudoUser(username); checkObjective('sudo'); }
+      if (group === 'sudo') {
+        addSudoUser(username);
+        if (username === 'devops') checkObjective('devops');
+        if (username === 'backup') checkObjective('backup');
+      }
       print(`Agregando '${username}' al grupo '${group}'`, 'success');
       return;
     }

@@ -21,7 +21,7 @@ const state = {
   pinInput: ''
 };
 
-const objectives = { sysadmin: false, devops: false, backup: false, sudo: false, list: false };
+const objectives = { sysadmin: false, devops: false, backup: false, list: false };
 
 const clock = new THREE.Clock();
 const moveDir = new THREE.Vector3();
@@ -49,11 +49,10 @@ export function checkObjective(key) {
 
 function updateObjectives() {
   const map = {
-    sysadmin: ['obj1', 'Crear usuario "sysadmin"'],
-    devops:   ['obj2', 'Crear usuario "devops"'],
-    backup:   ['obj3', 'Crear usuario "backup"'],
-    sudo:     ['obj4', 'Agregar usuario a sudo'],
-    list:     ['obj5', 'Ver lista de usuarios']
+    sysadmin: ['obj1', 'server-01 (Web): Crear usuario "sysadmin"'],
+    devops:   ['obj2', 'server-02 (DB): Crear usuario "devops" y agregarlo a sudo'],
+    backup:   ['obj3', 'server-03 (App): Crear usuario "backup" y agregarlo a sudo'],
+    list:     ['obj4', 'server-04 (Backup): Listar usuarios con cat /etc/passwd']
   };
   let allDone = true;
   for (const [k, [id]] of Object.entries(map)) {
