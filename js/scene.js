@@ -1,4 +1,6 @@
-// js/scene.js — Three.js scene, cabinets, render helpers
+// js/scene.js — Three.js scene, GLB server cabinets, door and wall, render helpers
+
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 200);
@@ -10,9 +12,10 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 scene.background = new THREE.Color(0x050a08);
 scene.fog = new THREE.Fog(0x050a08, 20, 60);
-camera.position.set(0, 1.7, 8);
+camera.position.set(0, 1.7, 22);
 
 const cabinetMeshes = [];
+let doorMesh = null;
 
 const serverData = [
   { id: 'server-01', name: 'Web Server',    pos: [-6, 0, -4] },
@@ -21,7 +24,96 @@ const serverData = [
   { id: 'server-04', name: 'Backup Server', pos: [6,  0,  4] }
 ];
 
-export function buildScene() {
+export function getDoor() { return doorMesh; }
+
+function loadServerModel() {
+  return new Promise((resolve, reject) => {
+    const loader = new GLTFLoader();
+    loader.load(
+      'model/servidor.glb',
+      gltf => resolve(gltf.scene),
+      undefined,
+      err => reject(err)
+    );
+  });
+}
+
+function instantiateCabinet(data, modelTemplate) {
+  const cabinet = modelTemplate.clone(true);
+  cabinet.userData = { serverId: data.id, serverName: data.name, interactive: true };
+  cabinet.position.set(data.pos[0], 0, data.pos[2]);
+  const glowLight = new THREE.PointLight(0x00ff44, 0.6, 3);
+  glowLight.position.set(0, 2, 0.8);
+  cabinet.add(glowLight);
+  cabinet.userData.glowLight = glowLight;
+  return cabinet;
+}
+
+function buildDoorAndWall() {
+  const wallMat = new THREE.MeshLambertMaterial({ color: 0x070f0a });
+  const doorMat = new THREE.MeshLambertMaterial({ color: 0x4a0a0a });
+  const frameMat = new THREE.MeshLambertMaterial({ color: 0x1a2e1f });
+
+  // Wall split into two segments (left + right of the door)
+  // Doorway is 2.5 wide, 3.5 tall, centered at x=0, z=18
+  const wallY = 2.5;
+  const wallZ = 18;
+  const wallThickness = 0.3;
+  const doorWidth = 2.5;
+  const doorHeight = 3.5;
+  const sideWidth = (40 - doorWidth) / 2;
+
+  const wallLeft = new THREE.Mesh(
+    new THREE.BoxGeometry(sideWidth, 5, wallThickness),
+    wallMat
+  );
+  wallLeft.position.set(-(doorWidth / 2 + sideWidth / 2), wallY, wallZ);
+  scene.add(wallLeft);
+
+  const wallRight = wallLeft.clone();
+  wallRight.position.x = (doorWidth / 2 + sideWidth / 2);
+  scene.add(wallRight);
+
+  // Top section above the door
+  const wallTop = new THREE.Mesh(
+    new THREE.BoxGeometry(doorWidth, 5 - doorHeight, wallThickness),
+    wallMat
+  );
+  wallTop.position.set(0, wallY + doorHeight / 2 + (5 - doorHeight) / 2, wallZ);
+  scene.add(wallTop);
+
+  // Door frame (visible decoration around the doorway)
+  const frameThickness = 0.1;
+  const frameDepth = 0.4;
+  const topFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(doorWidth + frameThickness * 2, frameThickness, frameDepth),
+    frameMat
+  );
+  topFrame.position.set(0, doorHeight, wallZ);
+  scene.add(topFrame);
+
+  const leftFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(frameThickness, doorHeight, frameDepth),
+    frameMat
+  );
+  leftFrame.position.set(-(doorWidth / 2 + frameThickness / 2), doorHeight / 2, wallZ);
+  scene.add(leftFrame);
+
+  const rightFrame = leftFrame.clone();
+  rightFrame.position.x = (doorWidth / 2 + frameThickness / 2);
+  scene.add(rightFrame);
+
+  // The door itself (the moving part)
+  doorMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(doorWidth - 0.05, doorHeight - 0.05, 0.15),
+    doorMat
+  );
+  doorMesh.position.set(0, doorHeight / 2, wallZ);
+  doorMesh.userData = { isDoor: true, open: false, closedX: 0, openX: -12, closedColor: 0x4a0a0a, openColor: 0x0a4a1a };
+  scene.add(doorMesh);
+}
+
+export async function buildScene() {
   // Floor
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(40, 40),
@@ -41,11 +133,10 @@ export function buildScene() {
   ceil.position.y = 5;
   scene.add(ceil);
 
-  // Walls
+  // Side and back walls (leave z=18 area for the door+wall section)
   const wallMat = new THREE.MeshLambertMaterial({ color: 0x070f0a });
   [
     [40, 5, 0.3,  0, 2.5, -20],
-    [40, 5, 0.3,  0, 2.5,  20],
     [0.3, 5, 40, -20, 2.5,  0],
     [0.3, 5, 40,  20, 2.5,  0]
   ].forEach(([w, h, d, x, y, z]) => {
@@ -73,11 +164,13 @@ export function buildScene() {
     scene.add(strip);
   }
 
-  // Cabinets
+  // Door + wall (with doorway)
+  buildDoorAndWall();
+
+  // Load GLB model and instantiate cabinets
+  const modelTemplate = await loadServerModel();
   serverData.forEach(s => {
-    const cabinet = buildCabinet(s);
-    cabinet.userData = { serverId: s.id, serverName: s.name, interactive: true };
-    cabinet.position.set(s.pos[0], 0, s.pos[2]);
+    const cabinet = instantiateCabinet(s, modelTemplate);
     scene.add(cabinet);
     cabinetMeshes.push(cabinet);
   });
@@ -92,56 +185,6 @@ export function buildScene() {
     cable.position.set(0, 0.05 + i * 0.08, (i - 3) * 1.5);
     scene.add(cable);
   }
-}
-
-function buildCabinet(data) {
-  const group = new THREE.Group();
-  const bodyMat = new THREE.MeshLambertMaterial({ color: 0x111a14 });
-  const frameMat = new THREE.MeshLambertMaterial({ color: 0x1a2e1f });
-  const panelMat = new THREE.MeshLambertMaterial({ color: 0x0a1a0f });
-
-  const body = new THREE.Mesh(new THREE.BoxGeometry(1.4, 4, 1), bodyMat);
-  body.position.y = 2; body.castShadow = true;
-  group.add(body);
-
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(1.42, 4.02, 1.02), frameMat);
-  frame.position.y = 2;
-  group.add(frame);
-
-  const panel = new THREE.Mesh(new THREE.BoxGeometry(1.2, 3.6, 0.02), panelMat);
-  panel.position.set(0, 2, 0.52);
-  group.add(panel);
-
-  const ledColors = [0x00ff00, 0x00aaff, 0xff8800, 0xff0000, 0x00ffff];
-  const ledGeo = new THREE.BoxGeometry(0.05, 0.05, 0.01);
-
-  for (let i = 0; i < 8; i++) {
-    const unit = new THREE.Mesh(
-      new THREE.BoxGeometry(1.0, 0.18, 0.3),
-      new THREE.MeshLambertMaterial({ color: 0x151f18 })
-    );
-    unit.position.set(0, 0.8 + i * 0.24, 0.38);
-    group.add(unit);
-
-    const led1 = new THREE.Mesh(ledGeo, new THREE.MeshBasicMaterial({
-      color: Math.random() > 0.3 ? ledColors[Math.floor(Math.random() * ledColors.length)] : 0x111111
-    }));
-    led1.position.set(-0.42, 0.8 + i * 0.24, 0.55);
-    group.add(led1);
-
-    const led2 = new THREE.Mesh(ledGeo, new THREE.MeshBasicMaterial({
-      color: Math.random() > 0.5 ? 0x00ff00 : 0x003300
-    }));
-    led2.position.set(-0.36, 0.8 + i * 0.24, 0.55);
-    group.add(led2);
-  }
-
-  const glowLight = new THREE.PointLight(0x00ff44, 0.6, 3);
-  glowLight.position.set(0, 2, 0.8);
-  group.add(glowLight);
-  group.userData.glowLight = glowLight;
-
-  return group;
 }
 
 export function getNearestServer() {
