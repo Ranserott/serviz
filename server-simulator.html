@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Server Config Simulator</title>
 <link rel="stylesheet" href="styles.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/"
+  }
+}
+</script>
 </head>
 <body>
 
@@ -35,6 +43,35 @@
   <div class="obj-item"><span id="obj3-icon" class="obj-pending">□</span><span id="obj3-text">Crear usuario "backup"</span></div>
   <div class="obj-item"><span id="obj4-icon" class="obj-pending">□</span><span id="obj4-text">Agregar usuario a sudo</span></div>
   <div class="obj-item"><span id="obj5-icon" class="obj-pending">□</span><span id="obj5-text">Ver lista de usuarios</span></div>
+</div>
+
+<div id="pin-overlay">
+  <div id="pin-panel">
+    <h2 id="pin-title">🔐 ACCESO RESTRINGIDO</h2>
+    <p id="pin-instruction">Ingresa el PIN de 4 dígitos para entrar</p>
+    <div id="pin-display">
+      <span class="pin-slot" data-i="0">_</span>
+      <span class="pin-slot" data-i="1">_</span>
+      <span class="pin-slot" data-i="2">_</span>
+      <span class="pin-slot" data-i="3">_</span>
+    </div>
+    <div id="pin-message"></div>
+    <div id="pin-keypad">
+      <button class="pin-key" data-digit="1">1</button>
+      <button class="pin-key" data-digit="2">2</button>
+      <button class="pin-key" data-digit="3">3</button>
+      <button class="pin-key" data-digit="4">4</button>
+      <button class="pin-key" data-digit="5">5</button>
+      <button class="pin-key" data-digit="6">6</button>
+      <button class="pin-key" data-digit="7">7</button>
+      <button class="pin-key" data-digit="8">8</button>
+      <button class="pin-key" data-digit="9">9</button>
+      <button class="pin-key pin-key-action" data-action="clear">⌫</button>
+      <button class="pin-key" data-digit="0">0</button>
+      <button class="pin-key pin-key-action" data-action="submit">↵</button>
+    </div>
+    <p id="pin-hint">ESC para cerrar</p>
+  </div>
 </div>
 
 <div id="overlay"></div>
