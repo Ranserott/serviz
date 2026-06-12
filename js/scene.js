@@ -157,3 +157,13 @@ export function getNearestServer() {
 
 export function getCamera() { return camera; }
 export function getCabinetMeshes() { return cabinetMeshes; }
+
+export function renderFrame() {
+  renderer.render(scene, camera);
+}
+
+export function resize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}

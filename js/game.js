@@ -1,6 +1,6 @@
 // js/game.js — global state, objectives, startGame, animate loop
 
-import { buildScene, getNearestServer, getCamera, getCabinetMeshes } from './scene.js';
+import { buildScene, getNearestServer, getCamera, getCabinetMeshes, renderFrame } from './scene.js';
 import { print, printPrompt, openTerminal as openTerminalUI, closeTerminal as closeTerminalUI, setupTerminalInput } from './terminal.js';
 import { processCommand } from './commands.js';
 import { getKey, setupInput } from './input.js';
@@ -142,7 +142,7 @@ function animate() {
   updateMovement(dt);
   updateInteractionHints();
   updateLedFlicker();
-  // Note: renderer.render(scene, camera) is added in Task 10
+  renderFrame();
 }
 
 export function startGame() {
