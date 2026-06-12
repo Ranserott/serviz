@@ -1,5 +1,6 @@
 // js/main.js — entry point
 
+import './three-bootstrap.js';
 import { setupGame, startGame } from './game.js';
 import { resize } from './scene.js';
 
