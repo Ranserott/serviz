@@ -85,6 +85,7 @@ export function processCommand(raw, deps) {
   if (base === 'hostname') { print('server-01', 'output'); return; }
 
   if (base === 'uname') {
+    checkObjective('uname');
     print(parts.includes('-a')
       ? 'Linux server-01 5.15.0-91-generic #101-Ubuntu SMP x86_64 GNU/Linux'
       : 'Linux', 'output');
@@ -101,6 +102,7 @@ export function processCommand(raw, deps) {
   }
 
   if (base === 'who') {
+    checkObjective('who');
     print('USER     TTY      FROM             LOGIN@', 'output');
     print('root     pts/0    192.168.1.10     10:42', 'output');
     Object.keys(users).filter(u => u !== 'root').forEach(u => {
@@ -150,6 +152,7 @@ export function processCommand(raw, deps) {
     print(`Creando directorio home '/home/${sanitize(username)}'`, 'output');
     print(`Agregando nuevo usuario '${sanitize(username)}' (1001) con grupo '${sanitize(username)}'`, 'output');
     if (username === 'sysadmin') checkObjective('sysadmin');
+    if (parts[1] === '-m' && username === 'alumno') checkObjective('homedir');
     return;
   }
 
@@ -159,6 +162,7 @@ export function processCommand(raw, deps) {
     if (!users[username]) { print(`userdel: el usuario '${sanitize(username)}' no existe`, 'error'); return; }
     if (username === 'root') { print('userdel: no se puede eliminar el usuario root', 'error'); return; }
     removeUser(username);
+    if (username === 'test') checkObjective('delete');
     print(`Eliminando usuario '${sanitize(username)}'`, 'output');
     return;
   }
@@ -166,6 +170,7 @@ export function processCommand(raw, deps) {
   if (base === 'passwd') {
     const username = parts[1] || 'root';
     if (!users[username]) { print(`passwd: usuario '${sanitize(username)}' no encontrado`, 'error'); return; }
+    checkObjective('passwd');
     print(`passwd: contraseña actualizada exitosamente para '${sanitize(username)}'`, 'success');
     return;
   }
@@ -182,6 +187,7 @@ export function processCommand(raw, deps) {
         if (username === 'devops') checkObjective('devops');
         if (username === 'backup') checkObjective('backup');
       }
+      if (username === 'alumno' && group === 'developers') checkObjective('usermod');
       print(`Agregando '${sanitize(username)}' al grupo '${sanitize(group)}'`, 'success');
       return;
     }
@@ -192,6 +198,7 @@ export function processCommand(raw, deps) {
   if (base === 'id') {
     const username = parts[1] || 'root';
     if (!users[username]) { print(`id: '${sanitize(username)}': no such user`, 'error'); return; }
+    checkObjective('userid');
     const uid = username === 'root' ? 0 : 1000 + Object.keys(users).indexOf(username);
     print(`uid=${uid}(${sanitize(username)}) gid=${uid}(${sanitize(username)}) grupos=${(userGroups[username] || [username]).join(',')}`, 'output');
     return;
@@ -200,6 +207,7 @@ export function processCommand(raw, deps) {
   if (base === 'groups') {
     const username = parts[1] || 'root';
     if (!users[username]) { print(`groups: '${sanitize(username)}': no such user`, 'error'); return; }
+    checkObjective('groups');
     print(`${sanitize(username)} : ${(userGroups[username] || [username]).join(' ')}`, 'output');
     return;
   }
