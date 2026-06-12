@@ -1,4 +1,5 @@
 // js/commands.js — Linux command simulator + state
+// With XSS protection and input validation
 
 let users = { root: true };
 let userGroups = { root: ['root', 'sudo'] };
@@ -32,6 +33,17 @@ export function resetState() {
   historyIndex = -1;
 }
 
+// Sanitize all user input to prevent XSS
+const sanitize = s => String(s)
+  .replace(/&/g, '&')
+  .replace(/</g, '<')
+  .replace(/>/g, '>')
+  .replace(/"/g, '"')
+  .replace(/'/g, '&#39;');
+
+// Validate username format (Linux username rules)
+const isValidUsername = u => /^[a-z_][a-z0-9_-]*$/.test(u) && u.length <= 32;
+
 const helpText = `Comandos disponibles:
   useradd <usuario>           Crear nuevo usuario
   useradd -m <usuario>        Crear usuario con directorio home
@@ -48,8 +60,6 @@ const helpText = `Comandos disponibles:
   ls /home                    Ver directorios home
   clear                       Limpiar terminal
   help                        Mostrar esta ayuda`;
-
-const escapeHtml = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export function processCommand(raw, deps) {
   const { print, printPrompt, checkObjective, closeTerminal } = deps;
@@ -81,21 +91,21 @@ export function processCommand(raw, deps) {
   }
 
   if (base === 'echo') {
-    print(parts.slice(1).join(' ').replace(/"/g, ''), 'output'); return;
+    print(sanitize(parts.slice(1).join(' ').replace(/"/g, '')), 'output'); return;
   }
 
   if (base === 'who') {
     print('USER     TTY      FROM             LOGIN@', 'output');
     print('root     pts/0    192.168.1.10     10:42', 'output');
     Object.keys(users).filter(u => u !== 'root').forEach(u => {
-      print(`${u.padEnd(9)}pts/1    192.168.1.11     11:00`, 'output');
+      print(`${sanitize(u).padEnd(9)}pts/1    192.168.1.11     11:00`, 'output');
     });
     return;
   }
 
   if (base === 'ls' && parts[1] === '/home') {
     const homes = Object.keys(users).filter(u => u !== 'root');
-    print(homes.length ? homes.join('  ') : '(vacío)', 'output');
+    print(homes.length ? homes.map(sanitize).join('  ') : '(vacío)', 'output');
     return;
   }
 
@@ -104,15 +114,15 @@ export function processCommand(raw, deps) {
     print('root:x:0:0:root:/root:/bin/bash', 'output');
     let uid = 1000;
     Object.keys(users).filter(u => u !== 'root').forEach(u => {
-      print(`${u}:x:${uid}:${uid}::/home/${u}:/bin/bash`, 'output'); uid++;
+      print(`${sanitize(u)}:x:${uid}:${uid}::/home/${sanitize(u)}:/bin/bash`, 'output'); uid++;
     });
     return;
   }
 
   if (base === 'cat' && parts[1] === '/etc/group') {
     print('root:x:0:root', 'output');
-    print('sudo:x:27:' + sudoUsers.join(','), 'output');
-    print('users:x:100:' + Object.keys(users).filter(u => u !== 'root').join(','), 'output');
+    print('sudo:x:27:' + sudoUsers.map(sanitize).join(','), 'output');
+    print('users:x:100:' + Object.keys(users).filter(u => u !== 'root').map(sanitize).join(','), 'output');
     return;
   }
 
@@ -122,17 +132,17 @@ export function processCommand(raw, deps) {
     else if (parts[1] && !parts[1].startsWith('-')) { username = parts[1]; }
     else { print('useradd: falta nombre de usuario', 'error'); return; }
 
-    if (!/^[a-z_][a-z0-9_-]*$/.test(username)) {
-      print(`useradd: '${username}' nombre de usuario inválido`, 'error'); return;
+    if (!isValidUsername(username)) {
+      print(`useradd: '${sanitize(username)}' nombre de usuario inválido (solo letras minúsculas, números, _ y -)`, 'error'); return;
     }
     if (users[username]) {
-      print(`useradd: el usuario '${username}' ya existe`, 'error'); return;
+      print(`useradd: el usuario '${sanitize(username)}' ya existe`, 'error'); return;
     }
     setUser(username);
-    print(`Agregando usuario '${username}'...`, 'output');
-    print(`Agregando nuevo grupo '${username}' (1001)`, 'output');
-    print(`Creando directorio home '/home/${username}'`, 'output');
-    print(`Agregando nuevo usuario '${username}' (1001) con grupo '${username}'`, 'output');
+    print(`Agregando usuario '${sanitize(username)}'...`, 'output');
+    print(`Agregando nuevo grupo '${sanitize(username)}' (1001)`, 'output');
+    print(`Creando directorio home '/home/${sanitize(username)}'`, 'output');
+    print(`Agregando nuevo usuario '${sanitize(username)}' (1001) con grupo '${sanitize(username)}'`, 'output');
     if (username === 'sysadmin') checkObjective('sysadmin');
     return;
   }
@@ -140,17 +150,17 @@ export function processCommand(raw, deps) {
   if (base === 'userdel') {
     const username = parts[1];
     if (!username) { print('userdel: falta nombre de usuario', 'error'); return; }
-    if (!users[username]) { print(`userdel: el usuario '${username}' no existe`, 'error'); return; }
+    if (!users[username]) { print(`userdel: el usuario '${sanitize(username)}' no existe`, 'error'); return; }
     if (username === 'root') { print('userdel: no se puede eliminar el usuario root', 'error'); return; }
     removeUser(username);
-    print(`Eliminando usuario '${username}'`, 'output');
+    print(`Eliminando usuario '${sanitize(username)}'`, 'output');
     return;
   }
 
   if (base === 'passwd') {
     const username = parts[1] || 'root';
-    if (!users[username]) { print(`passwd: usuario '${username}' no encontrado`, 'error'); return; }
-    print(`passwd: contraseña actualizada exitosamente para '${username}'`, 'success');
+    if (!users[username]) { print(`passwd: usuario '${sanitize(username)}' no encontrado`, 'error'); return; }
+    print(`passwd: contraseña actualizada exitosamente para '${sanitize(username)}'`, 'success');
     return;
   }
 
@@ -158,7 +168,7 @@ export function processCommand(raw, deps) {
     const gFlag = parts.indexOf('-aG');
     if (gFlag !== -1 && parts[gFlag + 1] && parts[gFlag + 2]) {
       const group = parts[gFlag + 1], username = parts[gFlag + 2];
-      if (!users[username]) { print(`usermod: usuario '${username}' no existe`, 'error'); return; }
+      if (!users[username]) { print(`usermod: usuario '${sanitize(username)}' no existe`, 'error'); return; }
       if (!userGroups[username]) userGroups[username] = [];
       if (!userGroups[username].includes(group)) userGroups[username].push(group);
       if (group === 'sudo') {
@@ -166,7 +176,7 @@ export function processCommand(raw, deps) {
         if (username === 'devops') checkObjective('devops');
         if (username === 'backup') checkObjective('backup');
       }
-      print(`Agregando '${username}' al grupo '${group}'`, 'success');
+      print(`Agregando '${sanitize(username)}' al grupo '${sanitize(group)}'`, 'success');
       return;
     }
     print('usermod: uso: usermod -aG <grupo> <usuario>', 'error');
@@ -175,21 +185,21 @@ export function processCommand(raw, deps) {
 
   if (base === 'id') {
     const username = parts[1] || 'root';
-    if (!users[username]) { print(`id: '${username}': no such user`, 'error'); return; }
+    if (!users[username]) { print(`id: '${sanitize(username)}': no such user`, 'error'); return; }
     const uid = username === 'root' ? 0 : 1000 + Object.keys(users).indexOf(username);
-    print(`uid=${uid}(${username}) gid=${uid}(${username}) grupos=${(userGroups[username] || [username]).join(',')}`, 'output');
+    print(`uid=${uid}(${sanitize(username)}) gid=${uid}(${sanitize(username)}) grupos=${(userGroups[username] || [username]).join(',')}`, 'output');
     return;
   }
 
   if (base === 'groups') {
     const username = parts[1] || 'root';
-    if (!users[username]) { print(`groups: '${username}': no such user`, 'error'); return; }
-    print(`${username} : ${(userGroups[username] || [username]).join(' ')}`, 'output');
+    if (!users[username]) { print(`groups: '${sanitize(username)}': no such user`, 'error'); return; }
+    print(`${sanitize(username)} : ${(userGroups[username] || [username]).join(' ')}`, 'output');
     return;
   }
 
   if (base === 'sudo')     { print('root no necesita sudo — ya eres superusuario', 'info'); return; }
   if (base === 'exit')     { print('logout', 'output'); setTimeout(() => closeTerminal(), 600); return; }
 
-  print(`bash: ${escapeHtml(base)}: comando no encontrado. Escribe 'help' para ver comandos.`, 'error');
+  print(`bash: ${sanitize(base)}: comando no encontrado. Escribe 'help' para ver comandos.`, 'error');
 }

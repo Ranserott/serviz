@@ -56,25 +56,29 @@ function normalizeToTargetHeight(model, targetHeight) {
     const scale = targetHeight / maxDim;
     model.scale.setScalar(scale);
   }
+  // Re-measure after scaling
   const newBox = new THREE.Box3().setFromObject(model);
-  const center = new THREE.Vector3();
-  newBox.getCenter(center);
-  model.position.x -= center.x;
-  model.position.y -= newBox.min.y;
-  model.position.z -= center.z;
-  console.log('After auto-fit:', { min: newBox.min, max: newBox.max });
+  const bottom = newBox.min.y;
+  // Place model so its bottom sits exactly at y=0
+  model.position.y -= bottom;
+  console.log('After auto-fit: bottom at y=0, minY=', newBox.min.y);
 }
 
 function instantiateCabinet(data, modelTemplate) {
+  // Wrap in a Group so we control position independently of GLB internal origin
+  const group = new THREE.Group();
   const cabinet = modelTemplate.clone(true);
-  cabinet.userData = { serverId: data.id, serverName: data.name, interactive: true };
-  cabinet.position.set(data.pos[0], 0.05, data.pos[2]);
-  cabinet.rotation.y = Math.PI; // face the entrance (z=+20)
+  // Reset GLB position to avoid inheriting any internal offset
+  cabinet.position.set(0, 0, 0);
+  group.add(cabinet);
+  group.userData = { serverId: data.id, serverName: data.name, interactive: true };
+  group.position.set(data.pos[0], 0, data.pos[2]);
+  group.rotation.y = Math.PI; // face the entrance (z=+20)
   const glowLight = new THREE.PointLight(0x00ff44, 0.6, 3);
   glowLight.position.set(0, 2, 0.8);
-  cabinet.add(glowLight);
-  cabinet.userData.glowLight = glowLight;
-  return cabinet;
+  group.add(glowLight);
+  group.userData.glowLight = glowLight;
+  return group;
 }
 
 function buildProceduralCabinet(data) {
