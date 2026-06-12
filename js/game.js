@@ -68,6 +68,46 @@ const LEVELS = [
       { key: 'uname',    server: 'server-03', serverName: 'App', text: 'Ver info del sistema con uname -a', command: 'uname -a' },
       { key: 'who',      server: 'server-04', serverName: 'Backup', text: 'Ver usuarios conectados con who', command: 'who' }
     ]
+  },
+  {
+    id: 4,
+    name: 'Redes y Conectividad',
+    objectives: [
+      { key: 'ifconfig', server: 'server-01', serverName: 'Web', text: 'Ver configuración de red con ifconfig', command: 'ifconfig' },
+      { key: 'hosts',    server: 'server-02', serverName: 'DB',  text: 'Agregar entrada en /etc/hosts', command: 'echo "192.168.1.100 app.local" >> /etc/hosts' },
+      { key: 'ping',    server: 'server-03', serverName: 'App', text: 'Hacer ping a google.com', command: 'ping -c 2 google.com' },
+      { key: 'route',   server: 'server-04', serverName: 'Backup', text: 'Ver tabla de rutas con route -n', command: 'route -n' }
+    ]
+  },
+  {
+    id: 5,
+    name: 'Procesos y Servicios',
+    objectives: [
+      { key: 'ps',       server: 'server-01', serverName: 'Web', text: 'Listar todos los procesos con ps aux', command: 'ps aux' },
+      { key: 'systemctl', server: 'server-02', serverName: 'DB',  text: 'Ver servicios activos con systemctl', command: 'systemctl list-units --type=service --state=running' },
+      { key: 'kill',     server: 'server-03', serverName: 'App', text: 'Enviar señal a proceso nginx (kill)', command: 'kill -15 1234' },
+      { key: 'top',     server: 'server-04', serverName: 'Backup', text: 'Ver procesos activos con top', command: 'top -b -n 1' }
+    ]
+  },
+  {
+    id: 6,
+    name: 'Almacenamiento y Disco',
+    objectives: [
+      { key: 'df',       server: 'server-01', serverName: 'Web', text: 'Ver uso de disco con df -h', command: 'df -h' },
+      { key: 'du',       server: 'server-02', serverName: 'DB',  text: 'Ver tamaño de /var/log con du -sh', command: 'du -sh /var/log' },
+      { key: 'mkdir',   server: 'server-03', serverName: 'App', text: 'Crear directorio /mnt/backup', command: 'mkdir -p /mnt/backup' },
+      { key: 'mount',   server: 'server-04', serverName: 'Backup', text: 'Ver puntos de montaje con mount', command: 'mount' }
+    ]
+  },
+  {
+    id: 7,
+    name: 'Seguridad y Permisos',
+    objectives: [
+      { key: 'chmod',    server: 'server-01', serverName: 'Web', text: 'Cambiar permisos de /scripts/deploy.sh', command: 'chmod 755 /scripts/deploy.sh' },
+      { key: 'chown',   server: 'server-02', serverName: 'DB',  text: 'Cambiar dueño de /data a postgres', command: 'chown -R postgres:postgres /data' },
+      { key: 'lsla',    server: 'server-03', serverName: 'App', text: 'Ver archivos ocultos en /root con ls -la', command: 'ls -la /root' },
+      { key: 'logs',    server: 'server-04', serverName: 'Backup', text: 'Ver últimas líneas de /var/log/syslog', command: 'tail -20 /var/log/syslog' }
+    ]
   }
 ];
 
