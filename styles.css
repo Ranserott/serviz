@@ -146,3 +146,89 @@ body { background: #000; overflow: hidden; font-family: monospace; }
 .obj-item { display: flex; align-items: center; gap: 6px; margin: 4px 0; font-size: 11px; }
 .obj-check { color: #00ff88; }
 .obj-pending { color: #ffffff44; }
+#pin-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 150;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-family: monospace;
+}
+#pin-overlay.open { display: flex; }
+#pin-panel {
+  background: #0d1117;
+  border: 1px solid #30ff7033;
+  border-radius: 8px;
+  padding: 28px 32px;
+  min-width: 320px;
+  box-shadow: 0 0 40px rgba(0, 255, 100, 0.15);
+  text-align: center;
+}
+#pin-title {
+  color: #00ff88;
+  font-size: 18px;
+  margin: 0 0 8px;
+  letter-spacing: 2px;
+}
+#pin-instruction {
+  color: #6a9f7a;
+  font-size: 12px;
+  margin: 0 0 20px;
+}
+#pin-display {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 16px 0;
+}
+.pin-slot {
+  display: inline-block;
+  width: 36px; height: 44px;
+  line-height: 44px;
+  border: 1px solid #00ff4455;
+  border-radius: 4px;
+  color: #00ff88;
+  font-size: 22px;
+  background: #161b22;
+}
+.pin-slot.filled { border-color: #00ff88; }
+#pin-message {
+  color: #ff6b6b;
+  font-size: 12px;
+  min-height: 18px;
+  margin: 8px 0;
+}
+#pin-message.success { color: #00ff88; }
+#pin-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 16px 0;
+}
+.pin-key {
+  padding: 14px;
+  font-family: monospace;
+  font-size: 18px;
+  background: #161b22;
+  color: #00ff88;
+  border: 1px solid #00ff4433;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.pin-key:hover { background: rgba(0, 255, 136, 0.1); }
+.pin-key:active { background: rgba(0, 255, 136, 0.2); }
+.pin-key-action { color: #7ec8e3; }
+#pin-hint {
+  color: #6a9f7a;
+  font-size: 10px;
+  margin: 12px 0 0;
+}
+@keyframes pin-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+#pin-panel.error { animation: pin-shake 0.4s; }
+#pin-panel.success { border-color: #00ff88; box-shadow: 0 0 60px rgba(0, 255, 100, 0.4); }
