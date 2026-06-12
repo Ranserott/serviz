@@ -19,7 +19,7 @@
 <div id="click-to-start">
   <div style="font-size:42px; margin-bottom:8px;">🖥️</div>
   <h1>SERVER CONFIG SIMULATOR</h1>
-  <p style="color:#7ec8e3; margin-bottom:4px;">Data Center — Nivel 1</p>
+  <p style="color:#7ec8e3; margin-bottom:4px;">Data Center Training</p>
   <p>Acércate a los gabinetes de servidores</p>
   <p>y configura usuarios en Linux</p>
   <button class="start-btn">▶  INICIAR</button>
@@ -37,11 +37,16 @@
 <div id="server-label"></div>
 <div id="controls-hint">WASD · Mouse para mirar · ESC para salir de terminal</div>
 <div id="objectives">
-  <h3>▸ MISIONES</h3>
-  <div class="obj-item"><span id="obj1-icon" class="obj-pending">□</span><span id="obj1-text"><b>server-01</b> (Web): Crear usuario "sysadmin"</span></div>
-  <div class="obj-item"><span id="obj2-icon" class="obj-pending">□</span><span id="obj2-text"><b>server-02</b> (DB): Crear usuario "devops" y agregarlo a <code>sudo</code></span></div>
-  <div class="obj-item"><span id="obj3-icon" class="obj-pending">□</span><span id="obj3-text"><b>server-03</b> (App): Crear usuario "backup" y agregarlo a <code>sudo</code></span></div>
-  <div class="obj-item"><span id="obj4-icon" class="obj-pending">□</span><span id="obj4-text"><b>server-04</b> (Backup): Listar usuarios con <code>cat /etc/passwd</code></span></div>
+  <div id="level-header">
+    <span id="level-badge">NIVEL 1</span>
+    <span id="level-name">Administración Básica</span>
+  </div>
+  <div id="objectives-list">
+    <!-- Dynamically populated by game.js -->
+  </div>
+  <div id="level-progress">
+    <span id="level-progress-text">0/4 completados</span>
+  </div>
 </div>
 
 <div id="pin-overlay">

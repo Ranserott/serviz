@@ -1,4 +1,4 @@
-// js/game.js — global state, objectives, startGame, animate loop
+// js/game.js — global state, multi-level objectives, startGame, animate loop
 
 import './three-bootstrap.js';
 import { buildScene, getNearestServer, getCamera, getCabinetMeshes, renderFrame, getDoor } from './scene.js';
@@ -21,8 +21,6 @@ const state = {
   pinInput: ''
 };
 
-const objectives = { sysadmin: false, devops: false, backup: false, list: false };
-
 const clock = new THREE.Clock();
 const moveDir = new THREE.Vector3();
 
@@ -38,45 +36,130 @@ const PIN_LENGTH = 4;
 const DOOR_Z = 18;
 const SPAWN_Z = 22;
 
-export function getState() { return state; }
+// ==================== MULTI-LEVEL OBJECTIVES SYSTEM ====================
 
-export function checkObjective(key) {
-  if (!objectives[key]) {
-    objectives[key] = true;
-    updateObjectives();
+const LEVELS = [
+  {
+    id: 1,
+    name: 'Administración Básica',
+    objectives: [
+      { key: 'sysadmin', server: 'server-01', serverName: 'Web', text: 'Crear usuario "sysadmin"', command: 'useradd sysadmin' },
+      { key: 'devops',  server: 'server-02', serverName: 'DB',  text: 'Crear usuario "devops" y agregarlo a sudo', command: 'usermod -aG sudo devops' },
+      { key: 'backup',   server: 'server-03', serverName: 'App', text: 'Crear usuario "backup" y agregarlo a sudo', command: 'usermod -aG sudo backup' },
+      { key: 'list',     server: 'server-04', serverName: 'Backup', text: 'Listar usuarios con cat /etc/passwd', command: 'cat /etc/passwd' }
+    ]
+  },
+  {
+    id: 2,
+    name: 'Gestión de Usuarios',
+    objectives: [
+      { key: 'homedir',  server: 'server-01', serverName: 'Web', text: 'Crear usuario con home: useradd -m alumno', command: 'useradd -m alumno' },
+      { key: 'delete',   server: 'server-02', serverName: 'DB',  text: 'Eliminar usuario "test" (si existe)', command: 'userdel test' },
+      { key: 'groups',   server: 'server-03', serverName: 'App', text: 'Ver grupos del usuario "devops"', command: 'groups devops' },
+      { key: 'usermod',  server: 'server-04', serverName: 'Backup', text: 'Agregar "alumno" al grupo "developers"', command: 'usermod -aG developers alumno' }
+    ]
+  },
+  {
+    id: 3,
+    name: 'Administración Avanzada',
+    objectives: [
+      { key: 'passwd',   server: 'server-01', serverName: 'Web', text: 'Cambiar contraseña de "sysadmin"', command: 'passwd sysadmin' },
+      { key: 'userid',   server: 'server-02', serverName: 'DB',  text: 'Ver UID del usuario "backup"', command: 'id backup' },
+      { key: 'uname',    server: 'server-03', serverName: 'App', text: 'Ver info del sistema con uname -a', command: 'uname -a' },
+      { key: 'who',      server: 'server-04', serverName: 'Backup', text: 'Ver usuarios conectados con who', command: 'who' }
+    ]
   }
+];
+
+let currentLevelIndex = 0;
+let completedObjectives = {}; // { levelId: { key: true } }
+
+function getCurrentLevel() {
+  return LEVELS[currentLevelIndex];
 }
 
-function updateObjectives() {
-  const map = {
-    sysadmin: ['obj1', 'server-01 (Web): Crear usuario "sysadmin"'],
-    devops:   ['obj2', 'server-02 (DB): Crear usuario "devops" y agregarlo a sudo'],
-    backup:   ['obj3', 'server-03 (App): Crear usuario "backup" y agregarlo a sudo'],
-    list:     ['obj4', 'server-04 (Backup): Listar usuarios con cat /etc/passwd']
-  };
-  let allDone = true;
-  for (const [k, [id]] of Object.entries(map)) {
-    const icon = document.getElementById(id + '-icon');
-    const text = document.getElementById(id + '-text');
-    if (objectives[k]) {
-      icon.textContent = '✓';
-      icon.className = 'obj-check';
-      text.style.textDecoration = 'line-through';
-      text.style.color = '#3a5a45';
-    } else {
-      allDone = false;
+function getLevelProgress() {
+  const level = getCurrentLevel();
+  const completed = completedObjectives[level.id] || {};
+  const done = level.objectives.filter(o => completed[o.key]).length;
+  return { done, total: level.objectives.length };
+}
+
+function checkObjective(key) {
+  const level = getCurrentLevel();
+  if (!completedObjectives[level.id]) completedObjectives[level.id] = {};
+  
+  if (!completedObjectives[level.id][key]) {
+    completedObjectives[level.id][key] = true;
+    updateObjectivesUI();
+    
+    const { done, total } = getLevelProgress();
+    if (done === total) {
+      onLevelComplete();
     }
   }
-  if (allDone) {
-    setTimeout(() => {
-      print('', 'output');
-      print('╔══════════════════════════════════════╗', 'success');
-      print('║  🎉  TODOS LOS OBJETIVOS COMPLETADOS  ║', 'success');
-      print('║     ¡Servidor configurado con éxito!  ║', 'success');
-      print('╚══════════════════════════════════════╝', 'success');
-    }, 300);
-  }
 }
+
+function onLevelComplete() {
+  const level = getCurrentLevel();
+  setTimeout(() => {
+    print('', 'output');
+    print('╔══════════════════════════════════════════╗', 'success');
+    print(`║  🎉  NIVEL ${level.id} COMPLETADO: ${level.name}  ║`, 'success');
+    print('║     ¡Pasando al siguiente nivel...      ║', 'success');
+    print('╚══════════════════════════════════════════╝', 'success');
+  }, 300);
+  
+  // Advance to next level after delay
+  setTimeout(() => {
+    if (currentLevelIndex < LEVELS.length - 1) {
+      currentLevelIndex++;
+      updateObjectivesUI();
+      print('', 'output');
+      print(`═══ NIVEL ${getCurrentLevel().id}: ${getCurrentLevel().name.toUpperCase()} ═══`, 'info');
+      print('Nuevas misiones disponibles en los servidores', 'info');
+    } else {
+      print('', 'output');
+      print('╔══════════════════════════════════════════╗', 'success');
+      print('║  🏆  TODOS LOS NIVELES COMPLETADOS  🏆  ║', 'success');
+      print('║   ¡Eres un Administrador de Sistemas!  ║', 'success');
+      print('╚══════════════════════════════════════════╝', 'success');
+    }
+  }, 2500);
+}
+
+function updateObjectivesUI() {
+  const level = getCurrentLevel();
+  const { done, total } = getLevelProgress();
+  
+  // Update level header
+  document.getElementById('level-badge').textContent = `NIVEL ${level.id}`;
+  document.getElementById('level-name').textContent = level.name;
+  document.getElementById('level-progress-text').textContent = `${done}/${total} completados`;
+  
+  // Update objectives list
+  const list = document.getElementById('objectives-list');
+  list.innerHTML = '';
+  
+  level.objectives.forEach((obj, i) => {
+    const completed = completedObjectives[level.id]?.[obj.key];
+    const div = document.createElement('div');
+    div.className = 'obj-item';
+    div.innerHTML = `
+      <span class="obj-${completed ? 'check' : 'pending'}">${completed ? '✓' : '□'}</span>
+      <span class="obj-text" style="${completed ? 'text-decoration:line-through;color:#3a5a45' : ''}">
+        <b>${obj.server}</b> (${obj.serverName}): ${obj.text}
+      </span>
+    `;
+    list.appendChild(div);
+  });
+}
+
+export function getState() { return state; }
+export function getCurrentLevelInfo() { return getCurrentLevel(); }
+export function checkObjective(key) { checkObjective(key); }
+
+// ==================== GAME LOGIC ====================
 
 function openTerminalFor(server) {
   state.terminalOpen = true;
@@ -92,7 +175,7 @@ function closeTerminalFor() {
 }
 
 function onKeyE() {
-  if (!state.inside) return; // no terminal outside
+  if (!state.inside) return;
   const nearest = getNearestServer();
   if (nearest && nearest.dist < INTERACT_DISTANCE) openTerminalFor(nearest.mesh);
 }
@@ -173,7 +256,6 @@ function updateMovement(dt) {
   if (getKey('KeyD') || getKey('ArrowRight')) moveDir.addScaledVector(right,    MOVE_SPEED * dt);
   camera.position.add(moveDir);
 
-  // Bounds: when outside, block at z=19 (just outside the door)
   if (!state.inside) {
     camera.position.x = Math.max(-BOUNDS, Math.min(BOUNDS, camera.position.x));
     camera.position.z = Math.max(19, Math.min(SPAWN_Z + 1, camera.position.z));
@@ -189,7 +271,6 @@ function updateInteractionHints() {
   const label = document.getElementById('server-label');
 
   if (!state.inside) {
-    // Outside: show door hint and PIN overlay when close
     const door = getDoor();
     if (door) {
       const dx = getCamera().position.x - door.position.x;
@@ -204,7 +285,6 @@ function updateInteractionHints() {
     return;
   }
 
-  // Inside: original cabinet hints
   const nearest = getNearestServer();
   if (nearest && nearest.dist < INTERACT_DISTANCE && !state.terminalOpen) {
     hint.style.display  = 'block';
@@ -238,12 +318,22 @@ export function startGame() {
   state.gameStarted = true;
   state.inside = false;
   state.pinInput = '';
+  currentLevelIndex = 0;
+  completedObjectives = {};
+  
   const camera = getCamera();
   camera.position.set(0, CAMERA_HEIGHT, SPAWN_Z);
   camera.lookAt(0, CAMERA_HEIGHT, 0);
+  
   buildScene().then(() => {
+    updateObjectivesUI();
     animate();
     document.getElementById('canvas').requestPointerLock();
+    print('', 'output');
+    print('═══ BIENVENIDO AL SERVER CONFIG SIMULATOR ═══', 'info');
+    print(`Nivel 1: ${getCurrentLevel().name}`, 'info');
+    print('Completa las misiones en cada servidor', 'info');
+    print('', 'output');
   });
 }
 
