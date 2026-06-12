@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Server Config Simulator</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="click-to-start">
+  <div style="font-size:42px; margin-bottom:8px;">🖥️</div>
+  <h1>SERVER CONFIG SIMULATOR</h1>
+  <p style="color:#7ec8e3; margin-bottom:4px;">Data Center — Nivel 1</p>
+  <p>Acércate a los gabinetes de servidores</p>
+  <p>y configura usuarios en Linux</p>
+  <button class="start-btn">▶  INICIAR</button>
+  <p style="margin-top:18px; font-size:12px; color:#3a5a45;">WASD / ↑↓←→ para mover · Mouse para mirar · E para interactuar</p>
+</div>
+
+<canvas id="canvas"></canvas>
+<div id="crosshair"></div>
+<div id="hud">
+  <div>📍 <span id="pos-display">Sala de Servidores</span></div>
+  <div>👤 Usuario: <span style="color:#fff">root@server</span></div>
+  <div>🖧 Gabinetes: <span id="cabinet-count" style="color:#ffd700">4</span></div>
+</div>
+<div id="interact-hint">Presiona <strong>[E]</strong> para acceder al servidor</div>
+<div id="server-label"></div>
+<div id="controls-hint">WASD · Mouse para mirar · ESC para salir de terminal</div>
+<div id="objectives">
+  <h3>▸ OBJETIVOS</h3>
+  <div class="obj-item"><span id="obj1-icon" class="obj-pending">□</span><span id="obj1-text">Crear usuario "sysadmin"</span></div>
+  <div class="obj-item"><span id="obj2-icon" class="obj-pending">□</span><span id="obj2-text">Crear usuario "devops"</span></div>
+  <div class="obj-item"><span id="obj3-icon" class="obj-pending">□</span><span id="obj3-text">Crear usuario "backup"</span></div>
+  <div class="obj-item"><span id="obj4-icon" class="obj-pending">□</span><span id="obj4-text">Agregar usuario a sudo</span></div>
+  <div class="obj-item"><span id="obj5-icon" class="obj-pending">□</span><span id="obj5-text">Ver lista de usuarios</span></div>
+</div>
+
+<div id="overlay"></div>
+<div id="terminal">
+  <div id="terminal-header">
+    <div class="t-dot" style="background:#ff5f56"></div>
+    <div class="t-dot" style="background:#ffbd2e"></div>
+    <div class="t-dot" style="background:#27c93f"></div>
+    <span id="terminal-title">Terminal — server-rack-01 — bash</span>
+    <button id="terminal-close">✕</button>
+  </div>
+  <div id="terminal-body"></div>
+  <div id="terminal-input-row">
+    <span id="terminal-prompt-label">root@server-01:~$</span>
+    <input id="terminal-input" autocomplete="off" spellcheck="false" placeholder="escribe un comando...">
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
