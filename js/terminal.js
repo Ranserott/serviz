@@ -47,10 +47,6 @@ export function closeTerminal() {
   terminalInput.value = '';
 }
 
-export function clearTerminal() {
-  terminalBody.innerHTML = '';
-}
-
 export function setupTerminalInput(onSubmit) {
   terminalInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
@@ -58,8 +54,4 @@ export function setupTerminalInput(onSubmit) {
       onSubmit(cmd);
     }
   });
-}
-
-export function focusTerminalInput() {
-  terminalInput.focus();
 }
