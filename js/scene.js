@@ -152,7 +152,7 @@ function buildProceduralCabinet(data, accentColor) {
     ledR
   };
   group.position.set(data.pos[0], 0, data.pos[2]);
-  group.rotation.y = Math.PI; // face the entrance (z=+20)
+  group.rotation.y = 0; // LCD faces +Z, toward the door (door at z=+18, spawn at z=+22)
   return group;
 }
 
@@ -282,11 +282,12 @@ export async function buildScene() {
     cabinetMeshes.push(cabinet);
   });
 
-  // Floor cables (gray/black ethernet, no neon)
+  // Floor cables: colored ethernet, palette matches the cabinet accents
+  const CABLE_COLORS = [0x4ade80, 0x4a9eff, 0xff5e5e, 0xffcc00, 0xa78bfa, 0xffffff];
   for (let i = 0; i < 6; i++) {
     const cable = new THREE.Mesh(
       new THREE.CylinderGeometry(0.03, 0.03, 12, 6),
-      new THREE.MeshLambertMaterial({ color: [0x222222, 0x333333, 0x444444, 0x1a1a1a][i % 4] })
+      new THREE.MeshLambertMaterial({ color: CABLE_COLORS[i % CABLE_COLORS.length] })
     );
     cable.rotation.z = Math.PI / 2;
     cable.position.set(0, 0.05 + i * 0.08, (i - 3) * 1.5);
