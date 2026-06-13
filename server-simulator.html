@@ -33,6 +33,14 @@
   <div>👤 Usuario: <span style="color:#fff">root@server</span></div>
   <div>🖧 Gabinetes: <span id="cabinet-count" style="color:#ffd700">4</span></div>
 </div>
+<button id="mute-toggle" aria-label="Mute audio" title="Mute / Unmute (M)">
+  <svg id="mute-icon-sound" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+  </svg>
+  <svg id="mute-icon-muted" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+    <path d="M3 9v6h4l5 5V4L7 9H3zm13.59 3L19 9.41 17.59 8 15 10.59 12.41 8 11 9.41 13.59 12 11 14.59 12.41 16 15 13.41 17.59 16 19 14.59 16.59 12z"/>
+  </svg>
+</button>
 <div id="interact-hint">Presiona <strong>[E]</strong> para acceder al servidor</div>
 <div id="server-label"></div>
 <div id="controls-hint">WASD · Mouse para mirar · ESC para salir de terminal</div>

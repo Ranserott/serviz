@@ -1,5 +1,7 @@
 // js/terminal.js — UI terminal: print, open, close, escapeHtml
 
+import { playTyping, playTerminalOpen, playTerminalClose } from './audio.js';
+
 const terminalBody = document.getElementById('terminal-body');
 const terminalInput = document.getElementById('terminal-input');
 const terminalEl = document.getElementById('terminal');
@@ -39,9 +41,11 @@ export function openTerminal(server) {
   print('', 'output');
   if (document.pointerLockElement) document.exitPointerLock();
   terminalInput.focus();
+  playTerminalOpen();
 }
 
 export function closeTerminal() {
+  playTerminalClose();
   terminalEl.style.display = 'none';
   overlayEl.style.display = 'none';
   terminalInput.value = '';
@@ -52,6 +56,8 @@ export function setupTerminalInput(onSubmit) {
     if (e.key === 'Enter') {
       const cmd = terminalInput.value; terminalInput.value = '';
       onSubmit(cmd);
+      return;
     }
+    playTyping();
   });
 }

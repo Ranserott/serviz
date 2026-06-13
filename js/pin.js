@@ -1,5 +1,7 @@
 // js/pin.js — PIN overlay UI
 
+import { playPinDigit, playPinSuccess, playPinError } from './audio.js';
+
 const overlayEl = document.getElementById('pin-overlay');
 const panelEl   = document.getElementById('pin-panel');
 const displayEl = document.getElementById('pin-display');
@@ -46,11 +48,13 @@ export function clearPinMessage() {
 export function triggerError() {
   panelEl.classList.add('error');
   setTimeout(() => panelEl.classList.remove('error'), 500);
+  playPinError();
 }
 
 export function triggerSuccess() {
   panelEl.classList.add('success');
   setTimeout(() => panelEl.classList.remove('success'), 1500);
+  playPinSuccess();
 }
 
 export function setupPinUI(handlers) {
@@ -60,7 +64,7 @@ export function setupPinUI(handlers) {
     btn.addEventListener('click', () => {
       const digit = btn.dataset.digit;
       const action = btn.dataset.action;
-      if (digit !== undefined) onDigit(digit);
+      if (digit !== undefined) { onDigit(digit); playPinDigit(); }
       else if (action === 'clear') onClear();
       else if (action === 'submit') onSubmit();
     });

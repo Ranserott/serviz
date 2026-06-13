@@ -9,6 +9,7 @@ import {
   isPinOpen, showPinOverlay, hidePinOverlay, setPinDisplay, setPinMessage,
   clearPinMessage, triggerError, triggerSuccess, setupPinUI
 } from './pin.js';
+import { unlockAudio, playFootstep, playDoorOpen, playLevelComplete } from './audio.js';
 
 const state = {
   gameStarted: false,
@@ -148,6 +149,7 @@ function onLevelComplete() {
     print(`║  🎉  NIVEL ${level.id} COMPLETADO: ${level.name}  ║`, 'success');
     print('║     ¡Pasando al siguiente nivel...      ║', 'success');
     print('╚══════════════════════════════════════════╝', 'success');
+    playLevelComplete();
   }, 300);
   
   // Advance to next level after delay
@@ -235,6 +237,7 @@ function openDoor() {
   door.userData.open = true;
   door.position.x = door.userData.openX;
   door.material.color.setHex(door.userData.openColor);
+  playDoorOpen();
 }
 
 function tryEnterPin(input) {
@@ -293,6 +296,7 @@ function updateMovement(dt) {
   if (getKey('KeyS') || getKey('ArrowDown'))  moveDir.addScaledVector(forward, -MOVE_SPEED * dt);
   if (getKey('KeyA') || getKey('ArrowLeft'))  moveDir.addScaledVector(right,   -MOVE_SPEED * dt);
   if (getKey('KeyD') || getKey('ArrowRight')) moveDir.addScaledVector(right,    MOVE_SPEED * dt);
+  if (moveDir.length() > 0) playFootstep();
   camera.position.add(moveDir);
 
   if (!state.inside) {
@@ -359,6 +363,7 @@ export function startGame() {
   state.pinInput = '';
   currentLevelIndex = 0;
   completedObjectives = {};
+  unlockAudio();
   
   const camera = getCamera();
   camera.position.set(0, CAMERA_HEIGHT, SPAWN_Z);

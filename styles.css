@@ -232,3 +232,18 @@ body { background: #000; overflow: hidden; font-family: monospace; }
 }
 #pin-panel.error { animation: pin-shake 0.4s; }
 #pin-panel.success { border-color: #00ff88; box-shadow: 0 0 60px rgba(0, 255, 100, 0.4); }
+#mute-toggle {
+  position: fixed; top: 16px; right: 16px;
+  width: 40px; height: 40px;
+  background: rgba(0,0,0,0.7);
+  border: 1px solid #00ff4433;
+  border-radius: 6px;
+  color: #00ff88;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10;
+  transition: background 0.15s, color 0.15s;
+}
+#mute-toggle:hover { background: rgba(0,40,20,0.9); color: #88ffaa; }
+#mute-toggle.muted { color: #ff5555; border-color: #ff555533; }
+#mute-toggle.muted:hover { color: #ff8888; }
