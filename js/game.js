@@ -125,7 +125,7 @@ function getLevelProgress() {
   return { done, total: level.objectives.length };
 }
 
-function checkObjective(key) {
+export function checkObjective(key) {
   const level = getCurrentLevel();
   if (!completedObjectives[level.id]) completedObjectives[level.id] = {};
   
@@ -197,7 +197,6 @@ function updateObjectivesUI() {
 
 export function getState() { return state; }
 export function getCurrentLevelInfo() { return getCurrentLevel(); }
-export function checkObjective(key) { checkObjective(key); }
 
 // ==================== GAME LOGIC ====================
 
