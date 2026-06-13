@@ -307,6 +307,7 @@ export function getNearestServer() {
 
 export function getCamera() { return camera; }
 export function getCabinetMeshes() { return cabinetMeshes; }
+export function getDoor() { return doorMesh; }
 
 export function renderFrame() {
   renderer.render(scene, camera);
