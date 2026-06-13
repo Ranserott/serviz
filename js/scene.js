@@ -1,7 +1,6 @@
-// js/scene.js — Three.js scene, GLB server cabinets, door and wall, render helpers
+// js/scene.js — Three.js scene, industrial procedural cabinets, door and wall, render helpers
 
 import './three-bootstrap.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 200);
@@ -11,8 +10,8 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-scene.background = new THREE.Color(0x050a08);
-scene.fog = new THREE.Fog(0x050a08, 35, 90);
+scene.background = new THREE.Color(0x1a1f1c);
+scene.fog = new THREE.Fog(0x1a1f1c, 30, 85);
 camera.position.set(0, 1.7, 22);
 
 const cabinetMeshes = [];
@@ -25,94 +24,142 @@ const serverData = [
   { id: 'server-04', name: 'Backup Server', pos: [6,  0,  4] }
 ];
 
-export function getDoor() { return doorMesh; }
+const ACCENT_BY_ID = {
+  'server-01': 0x4a9eff, // Web - blue
+  'server-02': 0x4ade80, // DB - green
+  'server-03': 0xff9a3c, // App - orange
+  'server-04': 0xa78bfa  // Backup - violet
+};
 
-function loadServerModel() {
-  return new Promise((resolve, reject) => {
-    const loader = new GLTFLoader();
-    loader.load(
-      'model/servidor.glb',
-      gltf => {
-        const root = gltf.scene;
-        const box = new THREE.Box3().setFromObject(root);
-        const size = new THREE.Vector3();
-        box.getSize(size);
-        console.log('GLB bounding box:', { min: box.min, max: box.max, size });
-        normalizeToTargetHeight(root, 4);
-        resolve(root);
-      },
-      undefined,
-      err => reject(err)
-    );
-  });
+const LCD_BY_ID = {
+  'server-01': 'WE-01 OK',
+  'server-02': 'DB-02 OK',
+  'server-03': 'AP-03 OK',
+  'server-04': 'BA-04 OK'
+};
+
+function makeLCDTexture(text) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#88ff88';
+  ctx.font = 'bold 36px monospace';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.magFilter = THREE.NearestFilter;
+  tex.minFilter = THREE.NearestFilter;
+  return tex;
 }
 
-function normalizeToTargetHeight(model, targetHeight) {
-  const box = new THREE.Box3().setFromObject(model);
-  const size = new THREE.Vector3();
-  box.getSize(size);
-  const maxDim = Math.max(size.x, size.y, size.z);
-  if (maxDim > 0) {
-    const scale = targetHeight / maxDim;
-    model.scale.setScalar(scale);
-  }
-  // Re-measure after scaling
-  const newBox = new THREE.Box3().setFromObject(model);
-  const bottom = newBox.min.y;
-  // Place model so its bottom sits exactly at y=0
-  model.position.y -= bottom;
-  console.log('After auto-fit: bottom at y=0, minY=', newBox.min.y);
+function makeLabelTexture(text) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#cccccc';
+  ctx.font = 'bold 22px monospace';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(text, 0, 0);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.magFilter = THREE.NearestFilter;
+  return tex;
 }
 
-function instantiateCabinet(data, modelTemplate) {
-  // Wrap in a Group so we control position independently of GLB internal origin
+function buildProceduralCabinet(data, accentColor) {
   const group = new THREE.Group();
-  const cabinet = modelTemplate.clone(true);
-  // Reset GLB position to avoid inheriting any internal offset
-  cabinet.position.set(0, 0, 0);
-  group.add(cabinet);
-  group.userData = { serverId: data.id, serverName: data.name, interactive: true };
-  group.position.set(data.pos[0], 0, data.pos[2]);
-  group.rotation.y = Math.PI; // face the entrance (z=+20)
-  const glowLight = new THREE.PointLight(0x00ff44, 0.6, 3);
-  glowLight.position.set(0, 2, 0.8);
-  group.add(glowLight);
-  group.userData.glowLight = glowLight;
-  return group;
-}
 
-function buildProceduralCabinet(data) {
-  const group = new THREE.Group();
+  // Main body
   const body = new THREE.Mesh(
     new THREE.BoxGeometry(1.4, 4, 1),
-    new THREE.MeshLambertMaterial({ color: 0x1a2e1f })
+    new THREE.MeshLambertMaterial({ color: 0x3a3a3a })
   );
   body.position.y = 2;
+  body.castShadow = true;
+  body.receiveShadow = true;
   group.add(body);
 
-  for (let i = 0; i < 8; i++) {
-    const led = new THREE.Mesh(
-      new THREE.BoxGeometry(0.08, 0.08, 0.02),
-      new THREE.MeshBasicMaterial({ color: i % 2 ? 0x00ff44 : 0x00ffaa })
-    );
-    led.position.set(0, 0.6 + i * 0.4, 0.55);
-    group.add(led);
+  // Front panel: upper darker rectangle that holds the LCD
+  const panelUpper = new THREE.Mesh(
+    new THREE.BoxGeometry(1.2, 0.4, 0.05),
+    new THREE.MeshLambertMaterial({ color: 0x1a1a1a })
+  );
+  panelUpper.position.set(0, 3.55, 0.51);
+  group.add(panelUpper);
+
+  // LCD display
+  const lcd = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.7, 0.25),
+    new THREE.MeshBasicMaterial({ map: makeLCDTexture(LCD_BY_ID[data.id] || 'SRV OK') })
+  );
+  lcd.position.set(0, 3.55, 0.54);
+  group.add(lcd);
+
+  // Ventilation grid: rows of small bars in the middle section
+  const ventMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
+  for (let row = 0; row < 6; row++) {
+    for (let col = 0; col < 6; col++) {
+      const bar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.14, 0.04, 0.04),
+        ventMat
+      );
+      bar.position.set(-0.42 + col * 0.17, 2.6 - row * 0.18, 0.52);
+      group.add(bar);
+    }
   }
 
-  const glowLight = new THREE.PointLight(0x00ff44, 0.8, 4);
-  glowLight.position.set(0, 2, 0.8);
-  group.add(glowLight);
-  group.userData.glowLight = glowLight;
+  // Two status LEDs on the panel
+  const ledGeo = new THREE.SphereGeometry(0.06, 12, 8);
+  const ledMatL = new THREE.MeshBasicMaterial({ color: accentColor });
+  const ledMatR = new THREE.MeshBasicMaterial({ color: accentColor });
+  const ledL = new THREE.Mesh(ledGeo, ledMatL);
+  ledL.position.set(-0.45, 3.55, 0.55);
+  const ledR = new THREE.Mesh(ledGeo, ledMatR);
+  ledR.position.set(0.45, 3.55, 0.55);
+  group.add(ledL);
+  group.add(ledR);
 
-  group.userData = { serverId: data.id, serverName: data.name, interactive: true };
+  // PointLight for glow
+  const glowLight = new THREE.PointLight(accentColor, 0.8, 4);
+  glowLight.position.set(0, 3.5, 0.8);
+  group.add(glowLight);
+
+  // Bottom label plate
+  const label = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.9, 0.15),
+    new THREE.MeshBasicMaterial({ map: makeLabelTexture(data.id.toUpperCase()) })
+  );
+  label.position.set(0, 0.3, 0.52);
+  group.add(label);
+
+  // userData
+  group.userData = {
+    serverId: data.id,
+    serverName: data.name,
+    interactive: true,
+    glowLight,
+    accentColor,
+    ledL,
+    ledR
+  };
   group.position.set(data.pos[0], 0, data.pos[2]);
+  group.rotation.y = Math.PI; // face the entrance (z=+20)
   return group;
 }
 
 function buildDoorAndWall() {
-  const wallMat = new THREE.MeshLambertMaterial({ color: 0x070f0a });
+  const wallMat = new THREE.MeshLambertMaterial({ color: 0x2a2d2a });
   const doorMat = new THREE.MeshLambertMaterial({ color: 0x4a0a0a });
-  const frameMat = new THREE.MeshLambertMaterial({ color: 0x1a2e1f });
+  const frameMat = new THREE.MeshLambertMaterial({ color: 0x3a3a3a });
 
   // Wall split into two segments (left + right of the door)
   // Doorway is 2.5 wide, 3.5 tall, centered at x=0, z=18
@@ -177,24 +224,24 @@ export async function buildScene() {
   // Floor
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(40, 40),
-    new THREE.MeshLambertMaterial({ color: 0x0a1a0f })
+    new THREE.MeshLambertMaterial({ color: 0x1a1a1a })
   );
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   scene.add(floor);
-  scene.add(new THREE.GridHelper(40, 40, 0x0d2b15, 0x0d2b15));
+  scene.add(new THREE.GridHelper(40, 40, 0x333333, 0x333333));
 
   // Ceiling
   const ceil = new THREE.Mesh(
     new THREE.PlaneGeometry(40, 40),
-    new THREE.MeshLambertMaterial({ color: 0x060d09 })
+    new THREE.MeshLambertMaterial({ color: 0x0a0a0a })
   );
   ceil.rotation.x = Math.PI / 2;
   ceil.position.y = 5;
   scene.add(ceil);
 
   // Side and back walls (leave z=18 area for the door+wall section)
-  const wallMat = new THREE.MeshLambertMaterial({ color: 0x070f0a });
+  const wallMat = new THREE.MeshLambertMaterial({ color: 0x2a2d2a });
   [
     [40, 5, 0.3,  0, 2.5, -20],
     [0.3, 5, 40, -20, 2.5,  0],
@@ -206,20 +253,20 @@ export async function buildScene() {
   });
 
   // Lighting
-  scene.add(new THREE.AmbientLight(0x445544, 1.2));
-  scene.add(new THREE.HemisphereLight(0x88ffaa, 0x222211, 0.8));
-  const mainLight = new THREE.DirectionalLight(0xffffff, 0.6);
+  scene.add(new THREE.AmbientLight(0x888888, 1.0));
+  scene.add(new THREE.HemisphereLight(0xaabbcc, 0x333333, 0.8));
+  const mainLight = new THREE.DirectionalLight(0xffffff, 0.5);
   mainLight.position.set(0, 8, 0);
   scene.add(mainLight);
 
   // Ceiling strips
   for (let i = -3; i <= 3; i += 2) {
-    const stripLight = new THREE.PointLight(0x00ff88, 0.4, 25);
+    const stripLight = new THREE.PointLight(0xaabbcc, 0.4, 25);
     stripLight.position.set(i * 3, 4.5, 0);
     scene.add(stripLight);
     const strip = new THREE.Mesh(
       new THREE.BoxGeometry(1.5, 0.05, 0.1),
-      new THREE.MeshBasicMaterial({ color: 0x00ff88 })
+      new THREE.MeshBasicMaterial({ color: 0xaabbcc })
     );
     strip.position.set(i * 3, 4.8, 0);
     scene.add(strip);
@@ -228,26 +275,18 @@ export async function buildScene() {
   // Door + wall (with doorway)
   buildDoorAndWall();
 
-  // Load GLB model and instantiate cabinets, with procedural fallback
-  let modelTemplate = null;
-  try {
-    modelTemplate = await loadServerModel();
-  } catch (err) {
-    console.error('Failed to load servidor.glb, falling back to procedural cabinets', err);
-  }
+  // Procedural industrial cabinets
   serverData.forEach(s => {
-    const cabinet = modelTemplate
-      ? instantiateCabinet(s, modelTemplate)
-      : buildProceduralCabinet(s);
+    const cabinet = buildProceduralCabinet(s, ACCENT_BY_ID[s.id]);
     scene.add(cabinet);
     cabinetMeshes.push(cabinet);
   });
 
-  // Floor cables
+  // Floor cables (gray/black ethernet, no neon)
   for (let i = 0; i < 6; i++) {
     const cable = new THREE.Mesh(
       new THREE.CylinderGeometry(0.03, 0.03, 12, 6),
-      new THREE.MeshLambertMaterial({ color: [0x003300, 0x000066, 0x330000, 0x333300][i % 4] })
+      new THREE.MeshLambertMaterial({ color: [0x222222, 0x333333, 0x444444, 0x1a1a1a][i % 4] })
     );
     cable.rotation.z = Math.PI / 2;
     cable.position.set(0, 0.05 + i * 0.08, (i - 3) * 1.5);
